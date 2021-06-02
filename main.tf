@@ -36,6 +36,14 @@ resource "azurerm_container_registry" "acr" {
   sku                       = var.sku
   admin_enabled             = var.admin_enabled
   quarantine_policy_enabled = var.sku == "Premium" ? true : false
+  #System  Managed Identity generated or User Managed Identity ID's which should be assigned to the Container Registry.
+  identity {
+    type = "SystemAssigned, UserAssigned"
+    identity_ids = [
+      var.identity_id
+    ]
+  }
+
   trust_policy {
     enabled = var.content_trust
   }
@@ -55,7 +63,18 @@ resource "azurerm_container_registry" "acr" {
     }
   }
 
+  dynamic "encryption" {
+    for_each = var.encryption["enabled"] == true ? ["encryption_activated"] : []
+    content {
+      enabled            = var.content_trust == true ? false : var.encryption["enabled"]
+      key_vault_key_id   = var.encryption["key_vault_key_id"]
+      identity_client_id = var.encryption["identity_client_id"]
+    }
+  }
+  #load_balancer_sku = length(var.availability_zones) == 0 ? var.load_balancer_sku : "Standard"
 }
+
+
 
 
 /* Phase 2 */
