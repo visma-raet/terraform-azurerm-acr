@@ -40,12 +40,11 @@ resource "azurerm_container_registry" "acr" {
   quarantine_policy_enabled = var.sku == "Premium" ? var.quarantine_policy_enabled : false
   #System  Managed Identity generated or User Managed Identity ID's which should be assigned to the Container Registry.
   identity {
-    type = "SystemAssigned, UserAssigned"
+    type = "UserAssigned"
     identity_ids = [
-      var.identity_id
+      azurerm_user_assigned_identity.identity_id.id
     ]
   }
-
   trust_policy {
     enabled = var.content_trust
   }
@@ -75,6 +74,13 @@ resource "azurerm_container_registry" "acr" {
   }
 }
 
+resource "azurerm_user_assigned_identity" "identity_id" {
+  resource_group_name = azurerm_resource_group.rg[0].name
+  location            = azurerm_resource_group.rg[0].location
+
+  name = "registry-uai"
+}
+
 resource "azurerm_role_assignment" "roles" {
   for_each = local.roles_map
 
@@ -82,4 +88,21 @@ resource "azurerm_role_assignment" "roles" {
   role_definition_name = each.value.role
   principal_id         = each.value.ppal_id
 
+}
+
+provider "azurerm" {
+  features {
+    log_analytics_workspace {
+      permanently_delete_on_destroy = true
+    }
+    resource_group {
+      prevent_deletion_if_contains_resources = true
+    }
+    key_vault {
+      purge_soft_delete_on_destroy               = true
+      purge_soft_deleted_secrets_on_destroy      = true
+      purge_soft_deleted_certificates_on_destroy = true
+    }
+  }
+  skip_provider_registration = true
 }

@@ -50,12 +50,6 @@ variable "encryption_enabled" {
   default     = true
 }
 
-variable "identity_id" {
-  type        = string
-  description = "The user assigned identity ID of the managed identity associated with the encryption key."
-  default     = null
-}
-
 variable "admin_enabled" {
   description = "Specifies whether the admin user is enabled."
   type        = bool
